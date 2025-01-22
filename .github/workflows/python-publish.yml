@@ -30,6 +30,8 @@ jobs:
       run: |
         ruff check .
     - name: Test with pytest
+      env:
+        CI: "true"
       run: |
         pytest tests/ -v
 

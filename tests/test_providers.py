@@ -56,11 +56,12 @@ def test_aliyun_provider_missing_endpoint(monkeypatch):
         )
 
 @pytest.mark.integration
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="Skip integration tests in CI environment")
 def test_aliyun_provider_integration(aliyun_credentials, tmp_path):
     """Integration test with real Aliyun OSS credentials"""
     # Skip if using test credentials
-    if aliyun_credentials["access_key"] == "test-key":
-        pytest.skip("Test credentials not suitable for integration test")
+    if not aliyun_credentials["access_key"] or aliyun_credentials["access_key"] == "test-key":
+        pytest.skip("No valid Aliyun credentials available")
         
     # Create a test file
     test_file = tmp_path / "test.txt"
@@ -83,11 +84,12 @@ def test_aliyun_provider_integration(aliyun_credentials, tmp_path):
     assert url.endswith("test.txt")
 
 @pytest.mark.integration
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="Skip integration tests in CI environment")
 def test_aliyun_provider_integration_with_internal(aliyun_credentials, tmp_path):
     """Integration test with internal endpoint"""
     # Skip if using test credentials
-    if aliyun_credentials["access_key"] == "test-key":
-        pytest.skip("Test credentials not suitable for integration test")
+    if not aliyun_credentials["access_key"] or aliyun_credentials["access_key"] == "test-key":
+        pytest.skip("No valid Aliyun credentials available")
         
     test_file = tmp_path / "test-internal.txt"
     test_content = b"Hello, Internal Aliyun OSS!"
@@ -122,9 +124,12 @@ def test_provider_upload_error(tmp_path):
     assert "Upload failed" in str(exc.value)
 
 @pytest.mark.integration
-@pytest.mark.skipif(not os.getenv("AWS_ACCESS_KEY_ID"), reason="AWS credentials not available")
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="Skip integration tests in CI environment")
 def test_aws_provider_integration(aws_credentials, tmp_path):
     """Integration test with AWS S3"""
+    if not aws_credentials["access_key"]:
+        pytest.skip("No AWS credentials available")
+        
     test_file = tmp_path / "test.txt"
     test_content = b"Hello, AWS S3!"
     test_file.write_bytes(test_content)

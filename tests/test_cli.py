@@ -1,4 +1,5 @@
 import pytest
+import os
 from click.testing import CliRunner
 from md_corpus.cli import cli
 from md_corpus import __version__
@@ -27,23 +28,41 @@ def test_convert_invalid_provider(runner):
     assert result.exit_code == 2
     assert "Invalid value for '--provider'" in result.output
 
-def test_convert_success(runner, test_data_dir, aliyun_credentials):
-    """Test successful conversion with Aliyun credentials"""
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="Skip integration tests in CI environment")
+def test_convert_success(runner, tmp_path):
+    """Test successful conversion with test credentials"""
+    # Create test files
+    test_file = tmp_path / "test.md"
+    test_file.write_text("![test](./image/test.jpg)")
+    
+    image_dir = tmp_path / "image"
+    image_dir.mkdir()
+    (image_dir / "test.jpg").write_bytes(b"test image")
+
     result = runner.invoke(cli, [
         'convert',
-        str(test_data_dir / 'test1.md'),
+        str(test_file),
         '--provider', 'aliyun',
-        '--bucket', aliyun_credentials['bucket'],
-        '--access-key', aliyun_credentials['access_key'],
-        '--secret-key', aliyun_credentials['secret_key'],
-        '--endpoint', aliyun_credentials['endpoint']
+        '--bucket', 'test-bucket',
+        '--access-key', 'test-key',
+        '--secret-key', 'test-secret',
+        '--endpoint', 'https://oss-cn-beijing.aliyuncs.com'
     ])
     assert result.exit_code == 0
     assert "Processing file:" in result.output
     assert "Done!" in result.output
 
-def test_convert_with_env_credentials(runner, test_data_dir, monkeypatch):
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="Skip integration tests in CI environment")
+def test_convert_with_env_credentials(runner, tmp_path, monkeypatch):
     """Test conversion using environment variables for credentials"""
+    # Create test files
+    test_file = tmp_path / "test.md"
+    test_file.write_text("![test](./image/test.jpg)")
+    
+    image_dir = tmp_path / "image"
+    image_dir.mkdir()
+    (image_dir / "test.jpg").write_bytes(b"test image")
+
     # Set environment variables
     monkeypatch.setenv('ALI_OSS_ACCESS_KEY_ID', 'test-key')
     monkeypatch.setenv('ALI_OSS_ACCESS_KEY_SECRET', 'test-secret')
@@ -52,7 +71,7 @@ def test_convert_with_env_credentials(runner, test_data_dir, monkeypatch):
     
     result = runner.invoke(cli, [
         'convert',
-        str(test_data_dir / 'test1.md'),
+        str(test_file),
         '--provider', 'aliyun',
         '--bucket', 'test-bucket'  # Still need to provide bucket name
     ])
