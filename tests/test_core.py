@@ -142,11 +142,11 @@ def test_convert_real_files_with_aliyun(aliyun_credentials, tmp_path):
     content = test1_path.read_text()
     assert f"https://{aliyun_credentials['bucket']}.oss-cn-beijing.aliyuncs.com/1.jpg" in content
 
-def test_convert_file_edge_cases(corpus, tmp_path):
+def test_convert_file_edge_cases(corpus, test_data_dir):
     """Test edge cases in Markdown link parsing"""
-    test_file = tmp_path / "edge_cases.md"
-    image_dir = tmp_path / "image"
-    image_dir.mkdir()
+    test_file = test_data_dir / "edge_cases.md"
+    image_dir = test_data_dir / "image"
+    image_dir.mkdir(exist_ok=True)
     
     # Create test images
     (image_dir / "test.jpg").write_bytes(b"test")
@@ -176,4 +176,130 @@ def test_convert_file_edge_cases(corpus, tmp_path):
     # Verify all images were uploaded
     assert str(image_dir / "test.jpg") in corpus.storage.uploaded_files
     assert str(image_dir / "test space.jpg") in corpus.storage.uploaded_files
-    assert str(image_dir / "test#hash.jpg") in corpus.storage.uploaded_files 
+    assert str(image_dir / "test#hash.jpg") in corpus.storage.uploaded_files
+
+def test_format_file(corpus, test_data_dir):
+    """Test Markdown file formatting"""
+    # Create a test markdown file with unformatted content
+    test_file = test_data_dir / "format_test.md"
+    unformatted_content = """
+# Title
+
+This is a paragraph.
+* Item 1
+* Item 2
+  * Subitem
+
+```python
+def hello():
+    print("Hello")
+```
+"""
+    test_file.write_text(unformatted_content)
+    
+    # Format the file
+    corpus.format_file(test_file)
+    
+    # Read the formatted content
+    formatted_content = test_file.read_text()
+    
+    # Verify formatting
+    assert "# Title" in formatted_content
+    assert "- Item 1" in formatted_content  # mdformat uses - for lists
+    assert "- Item 2" in formatted_content
+    assert "  - Subitem" in formatted_content
+    assert "```python" in formatted_content
+    assert 'print("Hello")' in formatted_content
+
+def test_format_directory(corpus, test_data_dir):
+    """Test formatting multiple Markdown files in a directory"""
+    # Create test files
+    subdir = test_data_dir / "subdir"
+    subdir.mkdir(exist_ok=True)
+    
+    file1 = test_data_dir / "test1.md"
+    file1.write_text("# File 1\n* Item 1\n* Item 2")
+    
+    file2 = subdir / "test2.md"
+    file2.write_text("# File 2\n* Item 1\n* Item 2")
+    
+    # Format directory
+    processed = corpus.format_directory(test_data_dir)
+    
+    # Check results
+    assert len(processed) >= 2  # May be more if other test files exist
+    assert any(str(p).endswith("test1.md") for p in processed)
+    assert any(str(p).endswith("test2.md") for p in processed)
+    
+    # Verify both files were formatted
+    content1 = file1.read_text()
+    content2 = file2.read_text()
+    assert "# File 1" in content1
+    assert "# File 2" in content2
+
+def test_format_file_not_found(corpus):
+    """Test formatting a non-existent file"""
+    with pytest.raises(MDCorpusError):
+        corpus.format_file("nonexistent.md")
+
+def test_convert_file_with_formatting(corpus, test_data_dir):
+    """Test that files are formatted before conversion"""
+    # Create a test markdown file with unformatted content
+    test_file = test_data_dir / "convert_test.md"
+    unformatted_content = """
+# Title
+* Item 1
+* Item 2
+![test](./image/test.jpg)
+"""
+    test_file.write_text(unformatted_content)
+    
+    # Create test image
+    image_dir = test_data_dir / "image"
+    image_dir.mkdir(exist_ok=True)
+    test_image = image_dir / "test.jpg"
+    test_image.write_bytes(b"test image")
+    
+    # Convert the file
+    corpus.convert_file(test_file)
+    
+    # Read the converted content
+    converted_content = test_file.read_text()
+    
+    # Verify formatting was applied
+    assert "- Item 1" in converted_content  # mdformat uses - for lists
+    assert "- Item 2" in converted_content
+    
+    # Verify image was converted
+    assert "https://example.com/bucket/test.jpg" in converted_content
+    assert str(test_image) in corpus.storage.uploaded_files
+
+def test_convert_nested_directory(corpus, test_data_dir):
+    """Test converting files in deeply nested directories"""
+    # Create nested directory structure
+    deep_dir = test_data_dir / "level1/level2/level3"
+    deep_dir.mkdir(parents=True, exist_ok=True)
+    image_dir = deep_dir / "image"
+    image_dir.mkdir(exist_ok=True)
+    
+    # Create test files
+    test_file = deep_dir / "test.md"
+    test_file.write_text("# Test\n* Item 1\n![test](./image/test.jpg)")
+    
+    # Create test image
+    test_image = image_dir / "test.jpg"
+    test_image.write_bytes(b"test image")
+    
+    # Convert the directory
+    processed = corpus.convert_directory(test_data_dir)
+    
+    # Verify file was processed
+    assert str(test_file) in processed
+    
+    # Read the converted content
+    converted_content = test_file.read_text()
+    
+    # Verify formatting and image conversion
+    assert "- Item 1" in converted_content  # Check formatting
+    assert "https://example.com/bucket/test.jpg" in converted_content  # Check image URL
+    assert str(test_image) in corpus.storage.uploaded_files  # Check image upload 

@@ -5,6 +5,7 @@ md-corpus - A Python package for integrating Markdown files with cloud object st
 from typing import Union, List
 from pathlib import Path
 import re
+import mdformat
 
 from .providers.base import StorageProvider
 from .exceptions import MDCorpusError
@@ -38,6 +39,10 @@ class MDCorpus:
             raise MDCorpusError(f"File not found: {file_path}")
             
         try:
+            # First format the file
+            self.format_file(file_path)
+            
+            # Then convert image links
             content = file_path.read_text(encoding='utf-8')
             converted = self._process_content(content, file_path.parent)
             file_path.write_text(converted, encoding='utf-8')
@@ -69,6 +74,55 @@ class MDCorpus:
             return processed_files
         except Exception as e:
             raise MDCorpusError(f"Failed to process directory {dir_path}: {str(e)}")
+
+    def format_file(self, file_path: Union[str, Path]) -> str:
+        """Format a single Markdown file
+        
+        Args:
+            file_path: Path to the Markdown file
+            
+        Returns:
+            str: The formatted Markdown content
+            
+        Raises:
+            MDCorpusError: If file operations fail
+        """
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise MDCorpusError(f"File not found: {file_path}")
+            
+        try:
+            content = file_path.read_text(encoding='utf-8')
+            formatted = mdformat.text(content)
+            file_path.write_text(formatted, encoding='utf-8')
+            return formatted
+        except Exception as e:
+            raise MDCorpusError(f"Failed to format file {file_path}: {str(e)}")
+    
+    def format_directory(self, dir_path: Union[str, Path]) -> List[str]:
+        """Format all Markdown files in a directory
+        
+        Args:
+            dir_path: Path to the directory containing Markdown files
+            
+        Returns:
+            List[str]: List of processed file paths
+            
+        Raises:
+            MDCorpusError: If directory operations fail
+        """
+        dir_path = Path(dir_path)
+        if not dir_path.is_dir():
+            raise MDCorpusError(f"Directory not found: {dir_path}")
+            
+        processed_files = []
+        try:
+            for md_file in dir_path.glob("**/*.md"):
+                self.format_file(md_file)
+                processed_files.append(str(md_file))
+            return processed_files
+        except Exception as e:
+            raise MDCorpusError(f"Failed to format directory {dir_path}: {str(e)}")
     
     def _process_content(self, content: str, base_path: Path) -> str:
         """Process Markdown content and convert local resource links

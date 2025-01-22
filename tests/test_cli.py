@@ -76,3 +76,33 @@ def test_convert_with_env_credentials(runner, tmp_path, monkeypatch):
         '--bucket', 'test-bucket'  # Still need to provide bucket name
     ])
     assert result.exit_code == 0 
+
+def test_format_file(runner, tmp_path):
+    """Test formatting a single file"""
+    # Create test file
+    test_file = tmp_path / "test.md"
+    test_file.write_text("# Title\n* Item 1\n* Item 2")
+    
+    result = runner.invoke(cli, ['format', str(test_file)])
+    assert result.exit_code == 0
+    assert "Formatting file:" in result.output
+    assert "Done!" in result.output
+
+def test_format_directory(runner, tmp_path):
+    """Test formatting a directory"""
+    # Create test files
+    (tmp_path / "subdir").mkdir()
+    (tmp_path / "test1.md").write_text("# File 1\n* Item 1\n* Item 2")
+    (tmp_path / "subdir/test2.md").write_text("# File 2\n* Item 1\n* Item 2")
+    
+    result = runner.invoke(cli, ['format', str(tmp_path)])
+    assert result.exit_code == 0
+    assert "Formatting directory:" in result.output
+    assert "Formatted 2 files" in result.output
+    assert "Done!" in result.output
+
+def test_format_file_not_found(runner):
+    """Test formatting a non-existent file"""
+    result = runner.invoke(cli, ['format', 'nonexistent.md'])
+    assert result.exit_code == 2  # Click returns 2 for file not found
+    assert "Error: Invalid value for 'PATH'" in result.output 

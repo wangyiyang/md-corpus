@@ -1,1 +1,1 @@
-![test2](./image/2.jpg)
+![test2](https://example.com/bucket/2.jpg)

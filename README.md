@@ -1,147 +1,148 @@
 # md-corpus
 
-A Python package for integrating Markdown files with cloud object storage services.
+A Python package for integrating Markdown files with cloud object storage. It helps you:
+- Format Markdown files using consistent style
+- Upload images to cloud storage (Aliyun OSS, AWS S3)
+- Convert local image links to cloud storage URLs
 
-## Features
+## Requirements
 
-- Automatically convert local resource links in Markdown files to object storage URLs
-- Support for multiple Markdown files in a directory
-- Support for AWS S3 and Aliyun OSS
-- Both CLI tool and programmable API
-- Extensible adapter/plugin mechanism
-- Support for custom domains (CNAME) for both AWS S3 and Aliyun OSS
-- Support for internal endpoints (Aliyun OSS)
+- Python >= 3.10
+- Dependencies:
+  - boto3 (AWS S3 support)
+  - oss2 (Aliyun OSS support)
+  - click (CLI tool)
+  - markdown (Markdown processing)
+  - mdformat (Markdown formatting)
 
 ## Installation
 
 ```bash
+# Install from PyPI
 pip install md-corpus
+
+# Or install from source
+git clone https://github.com/wangyiyang/md-corpus.git
+cd md-corpus
+pip install -e .
 ```
-
-## Usage
-
-### Command Line Interface
-
-Convert a single Markdown file:
-```bash
-# Using AWS S3
-md-corpus convert file.md --provider aws --bucket my-bucket --region us-east-1 --cname cdn.example.com
-
-# Using Aliyun OSS
-md-corpus convert file.md --provider aliyun --bucket my-bucket --endpoint oss-cn-beijing.aliyuncs.com --cname cdn.example.com
-```
-
-Convert all Markdown files in a directory:
-```bash
-# Using AWS S3
-md-corpus convert ./docs --provider aws --bucket my-bucket --region us-east-1 --cname cdn.example.com
-
-# Using Aliyun OSS with internal endpoint
-md-corpus convert ./docs --provider aliyun --bucket my-bucket --endpoint oss-cn-beijing.aliyuncs.com --internal --cname cdn.example.com
-```
-
-All command line options:
-```bash
-md-corpus convert [PATH] --provider [aws|aliyun] --bucket BUCKET [OPTIONS]
-
-Options:
-  --provider [aws|aliyun]  Storage provider to use (required)
-  --bucket TEXT           Storage bucket name (required)
-  --access-key TEXT       Provider access key (can use env vars)
-  --secret-key TEXT       Provider secret key (can use env vars)
-  --region TEXT          AWS region (for AWS provider)
-  --endpoint TEXT        Storage endpoint (for Aliyun provider)
-  --internal            Use internal endpoint (for Aliyun provider)
-  --cname TEXT          Custom domain name (CNAME) for the bucket
-```
-
-### Python API
-
-#### AWS S3 Example
-
-```python
-from md_corpus import MDCorpus
-from md_corpus.providers import AWSProvider
-
-# Initialize the provider
-provider = AWSProvider(
-    bucket="my-bucket",
-    access_key="your-access-key",  # Optional, can use AWS_ACCESS_KEY_ID env var
-    secret_key="your-secret-key",  # Optional, can use AWS_SECRET_ACCESS_KEY env var
-    region="us-east-1",           # Optional, can use AWS_DEFAULT_REGION env var
-    cname="cdn.example.com"       # Optional, custom domain name
-)
-
-# Create MDCorpus instance
-corpus = MDCorpus(provider)
-
-# Convert a single file
-corpus.convert_file("path/to/file.md")
-
-# Convert a directory
-corpus.convert_directory("path/to/docs")
-```
-
-#### Aliyun OSS Example
-
-```python
-from md_corpus import MDCorpus
-from md_corpus.providers import AliyunProvider
-
-# Initialize the provider
-provider = AliyunProvider(
-    bucket="my-bucket",
-    access_key="your-access-key",  # Optional, can use ALI_OSS_ACCESS_KEY_ID env var
-    secret_key="your-secret-key",  # Optional, can use ALI_OSS_ACCESS_KEY_SECRET env var
-    endpoint="oss-cn-beijing.aliyuncs.com",  # Optional, can use ALI_OSS_ENDPOINT env var
-    internal=False,                # Optional, use internal endpoint
-    cname="cdn.example.com"        # Optional, custom domain name
-)
-
-# Create MDCorpus instance
-corpus = MDCorpus(provider)
-
-# Convert files
-corpus.convert_file("path/to/file.md")
-corpus.convert_directory("path/to/docs")
-```
-
-## Configuration
-
-The package can be configured using environment variables:
-
-### AWS S3 Environment Variables
-- `AWS_ACCESS_KEY_ID`: AWS access key ID
-- `AWS_SECRET_ACCESS_KEY`: AWS secret access key
-- `AWS_DEFAULT_REGION`: AWS region
-
-### Aliyun OSS Environment Variables
-- `ALI_OSS_ACCESS_KEY_ID`: Aliyun access key ID
-- `ALI_OSS_ACCESS_KEY_SECRET`: Aliyun access key secret
-- `ALI_OSS_ENDPOINT`: OSS endpoint
 
 ## Features
 
-### Custom Domain (CNAME)
-Both AWS S3 and Aliyun OSS support using custom domains for your bucket. This can be configured using the `cname` parameter:
+### 1. Format Markdown Files
 
-```python
-provider = AWSProvider(bucket="my-bucket", cname="cdn.example.com")
-# or
-provider = AliyunProvider(bucket="my-bucket", cname="cdn.example.com")
+Format your Markdown files using consistent style:
+```bash
+# Format a single file
+md-corpus format path/to/file.md
+
+# Format all Markdown files in a directory (including subdirectories)
+md-corpus format path/to/directory
 ```
 
-### Internal Endpoints (Aliyun OSS)
-When running in Aliyun ECS, you can use internal endpoints to reduce data transfer costs:
+The formatter will:
+- Use `-` for list items (mdformat default)
+- Ensure consistent heading styles
+- Maintain code blocks and their language specifications
+- Preserve blank lines for readability
 
-```python
-provider = AliyunProvider(
-    bucket="my-bucket",
-    endpoint="oss-cn-beijing.aliyuncs.com",
-    internal=True  # Will use oss-internal.aliyuncs.com
-)
+### 2. Convert Image Links
+
+Convert local image links to cloud storage URLs:
+```bash
+# Convert a single file
+md-corpus convert path/to/file.md --provider aliyun --bucket your-bucket
+
+# Convert all Markdown files in a directory
+md-corpus convert path/to/directory --provider aliyun --bucket your-bucket
 ```
+
+When converting files, md-corpus will:
+1. Format the Markdown content for consistent style
+2. Upload referenced images to cloud storage
+3. Update image links to use cloud storage URLs
+
+## Cloud Storage Providers
+
+### Aliyun OSS
+
+```bash
+# Using command line arguments
+md-corpus convert file.md \
+    --provider aliyun \
+    --bucket your-bucket \
+    --access-key your-access-key \
+    --secret-key your-secret-key \
+    --endpoint https://oss-cn-beijing.aliyuncs.com
+
+# Using environment variables
+export ALI_OSS_ACCESS_KEY_ID=your-access-key
+export ALI_OSS_ACCESS_KEY_SECRET=your-secret-key
+export ALI_OSS_BUCKET=your-bucket
+export ALI_OSS_ENDPOINT=https://oss-cn-beijing.aliyuncs.com
+
+md-corpus convert file.md --provider aliyun
+```
+
+### AWS S3
+
+```bash
+# Using command line arguments
+md-corpus convert file.md \
+    --provider aws \
+    --bucket your-bucket \
+    --access-key your-access-key \
+    --secret-key your-secret-key \
+    --region us-east-1
+
+# Using environment variables
+export AWS_ACCESS_KEY_ID=your-access-key
+export AWS_SECRET_ACCESS_KEY=your-secret-key
+export AWS_BUCKET=your-bucket
+export AWS_REGION=us-east-1
+
+md-corpus convert file.md --provider aws
+```
+
+## Development
+
+1. Clone the repository:
+```bash
+git clone https://github.com/wangyiyang/md-corpus.git
+cd md-corpus
+```
+
+2. Create a conda environment:
+```bash
+conda create -n md-corpus python=3.10
+conda activate md-corpus
+```
+
+3. Install development dependencies:
+```bash
+pip install -e .
+```
+
+4. Run tests:
+```bash
+# Run all tests
+pytest tests/
+
+# Run specific test file
+pytest tests/test_core.py
+
+# Run with verbose output
+pytest tests/ -v
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License
