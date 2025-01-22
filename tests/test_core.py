@@ -65,14 +65,14 @@ def test_convert_directory(corpus, tmp_path):
     assert any(str(p).endswith("test1.md") for p in processed)
     assert any(str(p).endswith("test2.md") for p in processed)
 
-def test_convert_real_files(corpus, test_data_dir):
+def test_convert_real_files(corpus, tmp_path):
     """Test conversion with real test files from data directory"""
-    # Convert test1.md
-    test1_path = test_data_dir / "test1.md"
+    # Create test files in temporary directory
+    test1_path = tmp_path / "test1.md"
     test1_path.write_text("![test1](./image/1.jpg)")
     
     # Create test image
-    image_dir = test_data_dir / "image"
+    image_dir = tmp_path / "image"
     image_dir.mkdir(exist_ok=True)
     image1_path = image_dir / "1.jpg"
     image1_path.write_bytes(b"test1")
@@ -88,7 +88,7 @@ def test_convert_real_files(corpus, test_data_dir):
     assert "https://example.com/bucket/1.jpg" in content
     
     # Convert test2.md
-    test2_path = test_data_dir / "test2.md"
+    test2_path = tmp_path / "test2.md"
     test2_path.write_text("![test2](./image/2.jpg)")
     
     # Create test image
@@ -106,7 +106,7 @@ def test_convert_real_files(corpus, test_data_dir):
     assert "https://example.com/bucket/2.jpg" in content
 
 @pytest.mark.integration
-def test_convert_real_files_with_aliyun(aliyun_credentials, test_data_dir):
+def test_convert_real_files_with_aliyun(aliyun_credentials, tmp_path):
     """Integration test with real files and Aliyun OSS"""
     # Skip if using test credentials
     if aliyun_credentials["access_key"] == "test-key":
@@ -125,12 +125,12 @@ def test_convert_real_files_with_aliyun(aliyun_credentials, test_data_dir):
     # Initialize MDCorpus with real provider
     corpus = MDCorpus(provider)
     
-    # Convert test1.md
-    test1_path = test_data_dir / "test1.md"
+    # Create test files in temporary directory
+    test1_path = tmp_path / "test1.md"
     test1_path.write_text("![test1](./image/1.jpg)")
     
     # Create test image
-    image_dir = test_data_dir / "image"
+    image_dir = tmp_path / "image"
     image_dir.mkdir(exist_ok=True)
     image1_path = image_dir / "1.jpg"
     image1_path.write_bytes(b"test1")

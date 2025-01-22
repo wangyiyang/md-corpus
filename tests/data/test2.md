@@ -1,1 +1,1 @@
-![test2](https://kd1.oss-cn-beijing.aliyuncs.com/2.jpg)
+![test2](./image/2.jpg)
