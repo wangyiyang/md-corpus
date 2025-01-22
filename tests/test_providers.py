@@ -1,8 +1,7 @@
 import pytest
-from pathlib import Path
+import os
 from md_corpus.providers import AWSProvider, AliyunProvider
 from md_corpus.exceptions import MDCorpusError
-import os
 
 from tests.test_core import MockStorageProvider
 

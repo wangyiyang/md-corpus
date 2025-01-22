@@ -1,7 +1,6 @@
 """Base classes for storage providers"""
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 class StorageProvider(ABC):
     """Abstract base class for storage providers"""

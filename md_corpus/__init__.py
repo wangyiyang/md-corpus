@@ -2,11 +2,9 @@
 md-corpus - A Python package for integrating Markdown files with cloud object storage
 """
 
-from typing import Union, List, Optional
+from typing import Union, List
 from pathlib import Path
 import re
-import os
-from urllib.parse import quote
 
 from .providers.base import StorageProvider
 from .exceptions import MDCorpusError
