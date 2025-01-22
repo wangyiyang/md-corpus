@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "md-corpus"
+version = "0.1.0"
+authors = [
+    { name = "wangyiyang", email = "wangyiyang.kk@gmail.com" },
+]
+description = "A Python package for integrating Markdown files with cloud object storage"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "boto3>=1.26.0",
+    "oss2>=2.16.0",
+    "click>=8.0.0",
+    "markdown>=3.4.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/wangyiyang/md-corpus"
+"Bug Tracker" = "https://github.com/wangyiyang/md-corpus/issues"
+
+[project.scripts]
+md-corpus = "md_corpus.cli:main"
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests",
+]
+
+[tool.ruff]
+line-length = 120
